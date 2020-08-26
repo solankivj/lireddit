@@ -19,10 +19,15 @@ import { Updoot } from "./entities/Updoot";
 import { createUserLoader } from "./utils/createUserLoader";
 import { createUpdootLoader } from "./utils/createUpdootLoader";
 
+console.log(`DATABASE_URL=${process.env.DATABASE_URL}`)
+console.log(`REDIS_URL=${process.env.REDIS_URL}`)
+console.log(`CORS_ORIGIN=${process.env.CORS_ORIGIN}`)
+console.log(`SESSION_SECRET=${process.env.SESSION_SECRET}`)
+
 const main = async () => {
-  const conn = await createConnection({
+  await createConnection({
     type: "postgres",
-    url: process.env.DATABASE_URL,
+    url: "postgresql://nikolasburk:nikolasburk@localhost:5432/lireddit",
     logging: true,
     // synchronize: true,
     migrations: [path.join(__dirname, "./migrations/*")],
@@ -35,11 +40,11 @@ const main = async () => {
   const app = express();
 
   const RedisStore = connectRedis(session);
-  const redis = new Redis(process.env.REDIS_URL);
+  const redis = new Redis("127.0.0.1:6379");
   app.set("trust proxy", 1);
   app.use(
     cors({
-      origin: process.env.CORS_ORIGIN,
+      origin: "http://localhost:3000",
       credentials: true,
     })
   );
@@ -58,7 +63,7 @@ const main = async () => {
         domain: __prod__ ? ".codeponder.com" : undefined,
       },
       saveUninitialized: false,
-      secret: process.env.SESSION_SECRET,
+      secret: "qowiueojwojfalksdjoqiwueo",
       resave: false,
     })
   );
@@ -82,8 +87,8 @@ const main = async () => {
     cors: false,
   });
 
-  app.listen(parseInt(process.env.PORT), () => {
-    console.log("server started on localhost:4000");
+  app.listen(4000, () => {
+    console.log("server started on http://localhost:4000");
   });
 };
 
