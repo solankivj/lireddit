@@ -12,10 +12,8 @@ import {
   ObjectType,
   UseMiddleware,
 } from 'type-graphql'
-// import { getConnection } from 'typeorm'
 import { Post as PostEntity } from '../entities/Post'
 import { User as UserEntity } from '../entities/User'
-// import { Updoot as UpdootEntity } from '../entities/Updoot'
 import { isAuth } from '../middleware/isAuth'
 import { MyContext } from '../types'
 import { prisma } from '../prisma'
@@ -90,33 +88,17 @@ export class PostResolver {
       },
     })
 
-    // the user has voted on the post before
-    // and they are changing their vote
     const post = await prisma.post.findOne({
       where: { id: postId },
       select: { points: true },
     })
-    if (!post) return false
-    if (updoot && updoot.value !== realValue) {
-      // await getConnection().transaction(async (tm) => {
-      //   await tm.query(
-      //     `
-      //       update updoot
-      //       set value = $1
-      //       where "postId" = $2 and "userId" = $3
-      //   `,
-      //     [realValue, postId, userId],
-      //   )
+    if (!post) {
+      return false
+    }
 
-      //   await tm.query(
-      //     `
-      //       update post
-      //       set points = points + $1
-      //       where id = $2
-      //   `,
-      //     [2 * realValue, postId],
-      //   )
-      // })
+    if (updoot && updoot.value !== realValue) {
+      // the user has voted on the post before
+      // and they are changing their vote
       const op1 = prisma.updoot.update({
         where: {
           userId_postId: { userId, postId },
@@ -134,24 +116,6 @@ export class PostResolver {
       await prisma.$transaction([op1, op2])
     } else if (!updoot) {
       // has never voted before
-      // await getConnection().transaction(async (tm) => {
-      //   await tm.query(
-      //     `
-      //       insert into updoot ("userId", "postId", value)
-      //       values ($1, $2, $3)
-      //   `,
-      //     [userId, postId, realValue],
-      //   )
-
-      //   await tm.query(
-      //     `
-      //       update post
-      //       set points = points + $1
-      //       where id = $2
-      //   `,
-      //     [realValue, postId],
-      //   )
-      // })
       const op1 = prisma.updoot.create({
         data: {
           value: realValue,
@@ -198,22 +162,11 @@ export class PostResolver {
     order by p."createdAt" DESC
     limit ${limit};
     `
-    const prismaPosts = await prisma.$queryRaw(query)
-
-    // const posts = await getConnection().query(
-    //   `
-    // select p.*
-    // from post p
-    // ${cursor ? `where p."createdAt" < $2` : ''}
-    // order by p."createdAt" DESC
-    // limit $1
-    // `,
-    //   replacements,
-    // )
+    const posts = await prisma.$queryRaw(query)
 
     return {
-      posts: prismaPosts.slice(0, realLimit),
-      hasMore: prismaPosts.length === reaLimitPlusOne,
+      posts: posts.slice(0, realLimit),
+      hasMore: posts.length === reaLimitPlusOne,
     }
   }
 
