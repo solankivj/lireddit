@@ -18,6 +18,7 @@ const Index = () => {
     notifyOnNetworkStatusChange: true,
   });
 
+  console.dir(data, { depth: null })
   if (!loading && !data) {
     return (
       <div>
