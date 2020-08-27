@@ -13,10 +13,10 @@ import {
   // UseMiddleware,
 } from 'type-graphql'
 // import { getConnection } from 'typeorm'
-// import { Post as PostEntity } from '../entities/Post'
+import { Post as PostEntity } from '../entities/Post'
 // import { User as UserEntity } from '../entities/User'
 // import { Updoot as UpdootEntity } from '../entities/Updoot'
-import { Post } from '../graphqlTypes/Post'
+// import { Post } from '../graphqlTypes/Post'
 // import { User } from '../graphqlTypes/User'
 // import { isAuth } from '../middleware/isAuth'
 // import { MyContext } from '../types'
@@ -38,7 +38,7 @@ import { prisma } from '../prisma'
 //   hasMore: boolean
 // }
 
-@Resolver(() => Post)
+@Resolver(PostEntity)
 export class PostResolver {
   // @FieldResolver(() => String)
   // textSnippet(@Root() post: Post) {
@@ -174,40 +174,23 @@ export class PostResolver {
   //   }
   // }
 
-  @Query(() => Post, { nullable: true })
-  async findPost(@Arg('id', () => Int) id: number) {
-    return prisma.post.findOne({
-      where: { id },
-    })
-  }
-
-  // @Query(() => Post, { nullable: true })
-  // async post(@Arg('id', () => Int) id: number): Promise<Post | null> {
-  //   const post = await prisma.post.findOne({
+  // @Query(() => PostEntity, { nullable: true })
+  // async findPost(@Arg('id', () => Int) id: number) {
+  //   return prisma.post.findOne({
   //     where: { id },
-  //     include: {
-  //       creator: true,
-  //       updoots: true,
-  //     },
   //   })
-  //   if (!post) {
-  //     return null
-  //   }
-  //   const postToReturn = {
-  //     id: post?.id,
-  //     title: post?.title,
-  //     text: post?.text,
-  //     points: post?.points,
-  //     voteStatus: null,
-  //     creatorId: post?.creatorId,
-  //     creator: post?.creator as User,
-  //     createdAt: post?.createdAt,
-  //     updatedAt: post?.updatedAt,
-  //   }
-
-  //   return postToReturn
-  //   // return Post.findOne(id)
   // }
+
+  @Query(() => PostEntity, { nullable: true })
+  async post(@Arg('id', () => Int) id: number): Promise<PostEntity | null> {
+    const post = await prisma.post.findOne({
+      where: { id },
+
+    })
+
+    return post as PostEntity
+    // return Post.findOne(id)
+  }
 
   // @Mutation(() => Post)
   // @UseMiddleware(isAuth)
