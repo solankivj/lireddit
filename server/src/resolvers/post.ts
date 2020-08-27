@@ -12,10 +12,10 @@ import {
   ObjectType,
   UseMiddleware,
 } from 'type-graphql'
-import { getConnection } from 'typeorm'
+// import { getConnection } from 'typeorm'
 import { Post as PostEntity } from '../entities/Post'
 import { User as UserEntity } from '../entities/User'
-import { Updoot as UpdootEntity } from '../entities/Updoot'
+// import { Updoot as UpdootEntity } from '../entities/Updoot'
 import { isAuth } from '../middleware/isAuth'
 import { MyContext } from '../types'
 import { prisma } from '../prisma'
@@ -81,50 +81,91 @@ export class PostResolver {
     const realValue = isUpdoot ? 1 : -1
     const { userId } = req.session
 
-    const updoot = await UpdootEntity.findOne({ where: { postId, userId } })
+    const updoot = await prisma.updoot.findOne({
+      where: {
+        userId_postId: {
+          postId,
+          userId,
+        },
+      },
+    })
 
     // the user has voted on the post before
     // and they are changing their vote
+    const post = await prisma.post.findOne({
+      where: { id: postId },
+      select: { points: true },
+    })
+    if (!post) return false
     if (updoot && updoot.value !== realValue) {
-      await getConnection().transaction(async (tm) => {
-        await tm.query(
-          `
-    update updoot
-    set value = $1
-    where "postId" = $2 and "userId" = $3
-        `,
-          [realValue, postId, userId],
-        )
+      // await getConnection().transaction(async (tm) => {
+      //   await tm.query(
+      //     `
+      //       update updoot
+      //       set value = $1
+      //       where "postId" = $2 and "userId" = $3
+      //   `,
+      //     [realValue, postId, userId],
+      //   )
 
-        await tm.query(
-          `
-          update post
-          set points = points + $1
-          where id = $2
-        `,
-          [2 * realValue, postId],
-        )
+      //   await tm.query(
+      //     `
+      //       update post
+      //       set points = points + $1
+      //       where id = $2
+      //   `,
+      //     [2 * realValue, postId],
+      //   )
+      // })
+      const op1 = prisma.updoot.update({
+        where: {
+          userId_postId: { userId, postId },
+        },
+        data: {
+          value: realValue,
+        },
       })
+      const op2 = prisma.post.update({
+        where: { id: postId },
+        data: {
+          points: (post.points || 0) + 2 * realValue,
+        },
+      })
+      await prisma.$transaction([op1, op2])
     } else if (!updoot) {
       // has never voted before
-      await getConnection().transaction(async (tm) => {
-        await tm.query(
-          `
-    insert into updoot ("userId", "postId", value)
-    values ($1, $2, $3)
-        `,
-          [userId, postId, realValue],
-        )
+      // await getConnection().transaction(async (tm) => {
+      //   await tm.query(
+      //     `
+      //       insert into updoot ("userId", "postId", value)
+      //       values ($1, $2, $3)
+      //   `,
+      //     [userId, postId, realValue],
+      //   )
 
-        await tm.query(
-          `
-    update post
-    set points = points + $1
-    where id = $2
-      `,
-          [realValue, postId],
-        )
+      //   await tm.query(
+      //     `
+      //       update post
+      //       set points = points + $1
+      //       where id = $2
+      //   `,
+      //     [realValue, postId],
+      //   )
+      // })
+      const op1 = prisma.updoot.create({
+        data: {
+          value: realValue,
+          user: { connect: { id: userId } },
+          post: { connect: { id: postId } },
+        },
       })
+      const op2 = prisma.post.update({
+        where: { id: postId },
+        data: {
+          points: (post.points || 0) + 2 * realValue,
+        },
+      })
+      await prisma.$transaction([op1, op2])
     }
     return true
   }
