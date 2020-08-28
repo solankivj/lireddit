@@ -190,7 +190,7 @@ export class PostResolver {
     @Arg('input') input: PostInput,
     @Ctx() { req, prisma }: MyContext,
   ): Promise<PostEntity> {
-    const post = (await prisma.post.create({
+    const post = await prisma.post.create({
       data: {
         title: input.title,
         text: input.text,
@@ -200,8 +200,8 @@ export class PostResolver {
           },
         },
       },
-    })) as PostEntity
-    return post
+    }) 
+    return post as PostEntity
   }
 
   @Mutation(() => PostEntity, { nullable: true })
