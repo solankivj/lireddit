@@ -13,6 +13,7 @@ import connectRedis from "connect-redis";
 import cors from "cors";
 import { createUserLoader } from "./utils/createUserLoader";
 import { createUpdootLoader } from "./utils/createUpdootLoader";
+import { PrismaClient } from '@prisma/client'
 
 console.log(`DATABASE_URL=${process.env.DATABASE_URL}`)
 console.log(`REDIS_URL=${process.env.REDIS_URL}`)
@@ -56,6 +57,7 @@ const main = async () => {
     schema: await buildSchema({
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
+      emitSchemaFile: true,
     }),
     context: ({ req, res }) => ({
       req,
@@ -63,6 +65,7 @@ const main = async () => {
       redis,
       userLoader: createUserLoader(),
       updootLoader: createUpdootLoader(),
+      prisma: new PrismaClient()
     }),
   });
 

@@ -16,7 +16,6 @@ import { Post as PostEntity } from '../entities/Post'
 import { User as UserEntity } from '../entities/User'
 import { isAuth } from '../middleware/isAuth'
 import { MyContext } from '../types'
-import { prisma } from '../prisma'
 
 @InputType()
 class PostInput {
@@ -42,7 +41,7 @@ export class PostResolver {
   }
 
   @FieldResolver(() => UserEntity)
-  async creator(@Root() post: PostEntity) {
+  async creator(@Root() post: PostEntity, @Ctx() { prisma }: MyContext) {
     return prisma.post
       .findOne({
         where: { id: post.id },
@@ -51,7 +50,10 @@ export class PostResolver {
   }
 
   @FieldResolver(() => Int, { nullable: true })
-  async voteStatus(@Root() post: PostEntity, @Ctx() { req }: MyContext) {
+  async voteStatus(
+    @Root() post: PostEntity,
+    @Ctx() { req, prisma }: MyContext,
+  ) {
     if (!req.session.userId) {
       return null
     }
@@ -73,7 +75,7 @@ export class PostResolver {
   async vote(
     @Arg('postId', () => Int) postId: number,
     @Arg('value', () => Int) value: number,
-    @Ctx() { req }: MyContext,
+    @Ctx() { req, prisma }: MyContext,
   ) {
     const isUpdoot = value !== -1
     const realValue = isUpdoot ? 1 : -1
@@ -138,6 +140,7 @@ export class PostResolver {
   async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { prisma }: MyContext,
   ): Promise<PaginatedPosts> {
     // 20 -> 21
     const realLimit = Math.min(50, limit)
@@ -171,7 +174,10 @@ export class PostResolver {
   }
 
   @Query(() => PostEntity, { nullable: true })
-  async post(@Arg('id', () => Int) id: number): Promise<PostEntity | null> {
+  async post(
+    @Arg('id', () => Int) id: number,
+    @Ctx() { prisma }: MyContext,
+  ): Promise<PostEntity | null> {
     const post = await prisma.post.findOne({
       where: { id },
     })
@@ -182,7 +188,7 @@ export class PostResolver {
   @UseMiddleware(isAuth)
   async createPost(
     @Arg('input') input: PostInput,
-    @Ctx() { req }: MyContext,
+    @Ctx() { req, prisma }: MyContext,
   ): Promise<PostEntity> {
     const post = (await prisma.post.create({
       data: {
@@ -204,6 +210,7 @@ export class PostResolver {
     @Arg('id', () => Int) id: number,
     @Arg('title') title: string,
     @Arg('text') text: string,
+    @Ctx() { prisma }: MyContext,
   ): Promise<PostEntity | null> {
     const updatedPost = await prisma.post.update({
       where: {
@@ -221,7 +228,7 @@ export class PostResolver {
   @UseMiddleware(isAuth)
   async deletePost(
     @Arg('id', () => Int) id: number,
-    @Ctx() { req }: MyContext,
+    @Ctx() { req, prisma }: MyContext,
   ): Promise<boolean> {
     const post = await prisma.post.findOne({ where: { id } })
     if (!post) {

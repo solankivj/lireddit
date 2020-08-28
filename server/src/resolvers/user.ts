@@ -17,7 +17,6 @@ import { UsernamePasswordInput } from './UsernamePasswordInput'
 import { validateRegister } from '../utils/validateRegister'
 import { sendEmail } from '../utils/sendEmail'
 import { v4 } from 'uuid'
-import { prisma } from '../prisma'
 
 @ObjectType()
 class FieldError {
@@ -52,7 +51,7 @@ export class UserResolver {
   async changePassword(
     @Arg('token') token: string,
     @Arg('newPassword') newPassword: string,
-    @Ctx() { redis, req }: MyContext,
+    @Ctx() { redis, req, prisma }: MyContext,
   ): Promise<UserResponse> {
     if (newPassword.length <= 2) {
       return {
@@ -112,7 +111,7 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
-    @Ctx() { redis }: MyContext,
+    @Ctx() { redis, prisma }: MyContext,
   ) {
     const user = await prisma.user.findOne({
       where: { email },
@@ -140,19 +139,27 @@ export class UserResolver {
   }
 
   @Query(() => UserEntity, { nullable: true })
-  me(@Ctx() { req }: MyContext) {
+  async me(@Ctx() { req, prisma }: MyContext) {
     // you are not logged in
+    console.log(`req.session.userId: ${req.session.userId}`)
     if (!req.session.userId) {
+      console.log(`NOT LOGGED IN`)
       return null
     }
 
-    return UserEntity.findOne(req.session.userId)
+    console.log(
+      `LOGGED IN, RETRIEVE USER WITH ID ${req.session.userId} FROM DB`,
+    )
+    const user = await prisma.user.findOne({
+      where: { id: req.session.userId },
+    })
+    return user
   }
 
   @Mutation(() => UserResponse)
   async register(
     @Arg('options') options: UsernamePasswordInput,
-    @Ctx() { req }: MyContext,
+    @Ctx() { req, prisma }: MyContext,
   ): Promise<UserResponse> {
     const errors = validateRegister(options)
     if (errors) {
@@ -200,7 +207,7 @@ export class UserResolver {
   async login(
     @Arg('usernameOrEmail') usernameOrEmail: string,
     @Arg('password') password: string,
-    @Ctx() { req }: MyContext,
+    @Ctx() { req, prisma }: MyContext,
   ): Promise<UserResponse> {
     const userByEmail = await prisma.user.findOne({
       where: {
