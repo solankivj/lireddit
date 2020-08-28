@@ -209,7 +209,7 @@ export class UserResolver {
     })
     const userByUsername = await prisma.user.findOne({
       where: {
-        email: usernameOrEmail,
+        username: usernameOrEmail,
       },
     })
     const user = userByEmail || userByUsername

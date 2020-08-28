@@ -11,11 +11,6 @@ import Redis from "ioredis";
 import session from "express-session";
 import connectRedis from "connect-redis";
 import cors from "cors";
-import { createConnection } from "typeorm";
-import { Post } from "./entities/Post";
-import { User } from "./entities/User";
-import path from "path";
-import { Updoot } from "./entities/Updoot";
 import { createUserLoader } from "./utils/createUserLoader";
 import { createUpdootLoader } from "./utils/createUpdootLoader";
 
@@ -25,17 +20,6 @@ console.log(`CORS_ORIGIN=${process.env.CORS_ORIGIN}`)
 console.log(`SESSION_SECRET=${process.env.SESSION_SECRET}`)
 
 const main = async () => {
-  await createConnection({
-    type: "postgres",
-    url: "postgresql://nikolasburk:nikolasburk@localhost:5432/lireddit",
-    logging: true,
-    // synchronize: true,
-    migrations: [path.join(__dirname, "./migrations/*")],
-    entities: [Post, User, Updoot],
-  });
-  // await conn.runMigrations();
-
-  // await Post.delete({});
 
   const app = express();
 
