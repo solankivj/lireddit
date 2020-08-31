@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["transactionApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        Int      @default(autoincrement()) @id
+  title     String
+  text      String
+  points    Int      @default(0)
+  creatorId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  creator   User     @relation(fields: [creatorId], references: [id])
+  updoots   Updoot[]
+
+  @@map("post")
+}
+
+model Updoot {
+  value  Int
+  userId Int
+  postId Int
+  post   Post @relation(fields: [postId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
+
+  @@id([userId, postId])
+  @@map("updoot")
+}
+
+model User {
+  id        Int      @default(autoincrement()) @id
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  posts     Post[]
+  updoots   Updoot[]
+
+  @@map("user")
+}
