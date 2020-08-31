@@ -77,6 +77,7 @@ To start the app, you have to navigate into the `web` directory, install depende
 
 ```
 cd ../web
+npm install
 npm run dev
 ```
 
